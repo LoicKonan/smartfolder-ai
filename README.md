@@ -1,5 +1,11 @@
 # 📬 SmartFolder AI - Email Document Sorter 📁
 
+![SmartFolder AI Banner](SmartFolder_AI.png)
+
+[![Streamlit](https://img.shields.io/badge/Built%20with-Streamlit-red?logo=streamlit)](https://streamlit.io)
+[![Live App](https://img.shields.io/badge/Live%20App-SmartFolderAI-green?logo=google-chrome)](https://smartfolder-ai.streamlit.app)
+[![LinkedIn](https://img.shields.io/badge/Connect-LinkedIn-blue?logo=linkedin)](https://www.linkedin.com/in/loickonan/)
+
 A modern web application that automatically organizes your email attachments and local files into categorized folders using Streamlit.
 
 ---
@@ -198,4 +204,5 @@ Please ensure your code:
 
 ---
 
-Built with ❤️ and automation by **Loic**
+Built with ❤️ and automation by **Loic Konan**  
+🔗 [LinkedIn](https://www.linkedin.com/in/loickonan/)

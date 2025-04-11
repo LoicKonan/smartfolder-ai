@@ -1,4 +1,5 @@
 import streamlit as st
+from hashlib import sha256
 import os
 import hashlib
 import shutil
@@ -8,7 +9,27 @@ from pathlib import Path
 import imaplib
 import email
 import pandas as pd
-from streamlit_option_menu import option_menu
+
+# === USER AUTH ===
+def login_form():
+    st.markdown("### 🔐 Login to SmartFolder AI")
+    st.write("Sign in with one of the following providers:")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🔐 Sign in with Google"):
+            st.session_state.authenticated = True
+            st.success("Mock Google login successful")
+    with col2:
+        if st.button("🔐 Sign in with Microsoft"):
+            st.session_state.authenticated = True
+            st.success("Mock Microsoft login successful")
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    login_form()
+    st.stop()
 
 # === LOAD CONFIG ===
 load_dotenv()
@@ -166,18 +187,7 @@ with col_logo:
 with col_title:
     st.title("SmartFolder AI")
     st.markdown("**Your Inbox Automation Assistant**")
-    st.caption("Built by Sortana | Loic Konan")
-
-# --- Landing Message / Start Button ---
-if "launched" not in st.session_state:
-    st.session_state.launched = False
-
-if not st.session_state.launched:
-    st.subheader("📥 Smartly Organize Attachments")
-    st.markdown("Automatically download, sort, and log your email & local files. Built for professionals in finance and healthcare.")
-    if st.button("🚀 Launch SmartFolder Dashboard"):
-        st.session_state.launched = True
-    st.stop()
+    st.caption("Built by Loic Konan | ISK LLC")
 
 # --- Dashboard Tabs ---
 tabs = st.tabs(["📂 Dashboard", "📜 Audit Log", "⚙️ Settings"])
