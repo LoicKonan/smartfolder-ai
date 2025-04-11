@@ -15,6 +15,10 @@ load_dotenv()
 EMAIL = os.getenv("EMAIL_USER")
 APP_PASSWORD = os.getenv("EMAIL_PASS")
 
+if not EMAIL or not APP_PASSWORD:
+    st.error("Please make sure your .env file contains EMAIL_USER and EMAIL_PASS variables")
+    st.stop()
+
 # === CONFIGURATION ===
 DOWNLOADS_DIR = str(Path.home() / "Downloads")
 BASE_DIR = os.path.join(DOWNLOADS_DIR, "EmailDownloads")
@@ -145,55 +149,86 @@ def move_existing_files():
     return moved_files
 
 # === STREAMLIT UI ===
-st.set_page_config(page_title="SmartFolder AI", page_icon="📬", layout="wide")
+st.set_page_config(page_title="SmartFolder AI", page_icon="📂", layout="wide")
 st.markdown("""
     <style>
-    .main {background-color: #f9f9f9;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
+        .main {background-color: #f8f9fa;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        .block-container {padding-top: 2rem;}
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-with st.sidebar:
-    selected = option_menu(
-        "SmartFolder AI Menu",
-        ["Dashboard", "History Log", "Settings"],
-        icons=["house", "clock-history", "gear"],
-        menu_icon="cast",
-        default_index=0
-    )
+# --- Logo and Landing Header ---
+col_logo, col_title = st.columns([1, 5])
+with col_logo:
+    st.image("SmartFolder_AI.png", width=100)
+with col_title:
+    st.title("SmartFolder AI")
+    st.markdown("**Your Inbox Automation Assistant**")
+    st.caption("Built by Sortana | Loic Konan")
 
-st.title("📬 SmartFolder AI Dashboard")
-st.caption("Organize your documents. Save time. Stay compliant.")
+# --- Landing Message / Start Button ---
+if "launched" not in st.session_state:
+    st.session_state.launched = False
 
-if selected == "Dashboard":
+if not st.session_state.launched:
+    st.subheader("📥 Smartly Organize Attachments")
+    st.markdown("Automatically download, sort, and log your email & local files. Built for professionals in finance and healthcare.")
+    if st.button("🚀 Launch SmartFolder Dashboard"):
+        st.session_state.launched = True
+    st.stop()
+
+# --- Dashboard Tabs ---
+tabs = st.tabs(["📂 Dashboard", "📜 Audit Log", "⚙️ Settings"])
+
+# --- Tab 1: Dashboard ---
+with tabs[0]:
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("📂 Organize Local Files"):
-            moved = move_existing_files()
-            st.success(f"Moved {len(moved)} file(s).")
-            for f in moved:
-                st.write(f"📁 {f}")
-
-    with col2:
-        if st.button("📧 Fetch Email Attachments"):
+        st.header("📧 Fetch Email Attachments")
+        if st.button("🔄 Fetch Now"):
             attachments = fetch_attachments()
             st.info(f"Found {len(attachments)} attachment(s).")
             saved = save_attachments(attachments)
             st.success(f"Saved {len(saved)} file(s).")
             for f in saved:
                 st.write(f"✅ {f}")
+        st.caption("Pull recent attachments from Gmail")
 
-elif selected == "History Log":
+    with col2:
+        st.header("🗂️ Organize Local Files")
+        if st.button("🧹 Sort Downloads"):
+            moved = move_existing_files()
+            st.success(f"Moved {len(moved)} file(s).")
+            for f in moved:
+                st.write(f"📁 {f}")
+        st.caption("Clean up your Downloads folder by file type")
+
+    st.divider()
+    st.subheader("📤 Or Drop Files Below to Sort")
+    uploaded_files = st.file_uploader("Drag & Drop", accept_multiple_files=True)
+    if uploaded_files:
+        for file in uploaded_files:
+            st.success(f"✅ {file.name} processed.")  # simulate sorting
+
+# --- Tab 2: Audit Log ---
+with tabs[1]:
+    st.header("📜 Download & Sort History")
     ensure_log()
     if os.path.exists(LOG_FILE):
         with open(LOG_FILE, "r") as f:
             hashes = f.read().splitlines()
         df = pd.DataFrame(hashes, columns=["Downloaded File Hashes"])
-        st.dataframe(df)
-        st.download_button("📥 Download Log CSV", df.to_csv(index=False), file_name="log.csv")
+        st.dataframe(df, use_container_width=True)
+        st.download_button("📥 Export Log", df.to_csv(index=False), file_name="smartfolder_log.csv")
     else:
         st.info("No logs available yet.")
 
-elif selected == "Settings":
-    st.info("Settings panel coming soon. You'll be able to configure folders, filters, and more.")
+# --- Tab 3: Settings ---
+with tabs[2]:
+    st.header("⚙️ Settings")
+    st.text_input("Gmail Filter Email (Optional)")
+    st.selectbox("File Naming Convention", ["ProjectName-Type", "Type-ProjectName"])
+    st.checkbox("Only sort new files", value=True)
+    st.button("💾 Save Settings")
