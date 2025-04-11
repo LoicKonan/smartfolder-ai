@@ -1,4 +1,3 @@
-
 import streamlit as st
 import os
 import hashlib
@@ -72,21 +71,44 @@ def fetch_attachments():
         email_ids = messages[0].split()
 
         for email_id in email_ids:
-            status, data = mail.fetch(email_id, "(RFC822)")
-            msg = email.message_from_bytes(data[0][1])
+            try:
+                status, data = mail.fetch(email_id, "(RFC822)")
+                if not data or not data[0]:
+                    continue
+                    
+                raw_email = data[0][1]
+                if not raw_email:
+                    continue
+                    
+                msg = email.message_from_bytes(raw_email)
+                if not msg:
+                    continue
 
-            for part in msg.walk():
-                if part.get_content_maintype() == "multipart":
-                    continue
-                if part.get("Content-Disposition") is None:
-                    continue
-                filename = part.get_filename()
-                if filename:
-                    file_data = part.get_payload(decode=True)
-                    attachments.append((filename, file_data))
+                for part in msg.walk():
+                    if part.get_content_maintype() == "multipart":
+                        continue
+                    if part.get("Content-Disposition") is None:
+                        continue
+                        
+                    filename = part.get_filename()
+                    if not filename:
+                        continue
+                        
+                    try:
+                        file_data = part.get_payload(decode=True)
+                        if file_data:
+                            attachments.append((filename, file_data))
+                    except Exception as e:
+                        st.warning(f"Could not decode attachment {filename}: {str(e)}")
+                        continue
+                        
+            except Exception as e:
+                st.warning(f"Error processing email {email_id}: {str(e)}")
+                continue
+                
         mail.logout()
     except Exception as e:
-        st.error(f"Email fetch failed: {e}")
+        st.error(f"Email fetch failed: {str(e)}")
     return attachments
 
 def save_attachments(attachments):
@@ -123,7 +145,7 @@ def move_existing_files():
     return moved_files
 
 # === STREAMLIT UI ===
-st.set_page_config(page_title="Email Sorter Pro", page_icon="📬", layout="wide")
+st.set_page_config(page_title="SmartFolder AI", page_icon="📬", layout="wide")
 st.markdown("""
     <style>
     .main {background-color: #f9f9f9;}
@@ -134,14 +156,14 @@ st.markdown("""
 
 with st.sidebar:
     selected = option_menu(
-        "Email Sorter Menu",
+        "SmartFolder AI Menu",
         ["Dashboard", "History Log", "Settings"],
         icons=["house", "clock-history", "gear"],
         menu_icon="cast",
         default_index=0
     )
 
-st.title("📬 Email Attachment Sorter Dashboard")
+st.title("📬 SmartFolder AI Dashboard")
 st.caption("Organize your documents. Save time. Stay compliant.")
 
 if selected == "Dashboard":
@@ -174,4 +196,4 @@ elif selected == "History Log":
         st.info("No logs available yet.")
 
 elif selected == "Settings":
-    st.info("Settings panel coming soon. You’ll be able to configure folders, filters, and more.")
+    st.info("Settings panel coming soon. You'll be able to configure folders, filters, and more.")
