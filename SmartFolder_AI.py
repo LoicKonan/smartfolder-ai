@@ -32,12 +32,12 @@ if not st.session_state.authenticated:
     st.stop()
 
 # === LOAD CONFIG ===
-load_dotenv()
-EMAIL = os.getenv("EMAIL_USER")
-APP_PASSWORD = os.getenv("EMAIL_PASS")
+# Try secrets first (for Streamlit Cloud)
+EMAIL = st.secrets["email"]["email_user"]
+APP_PASSWORD = st.secrets["email"]["email_pass"]
 
 if not EMAIL or not APP_PASSWORD:
-    st.error("Please make sure your .env file contains EMAIL_USER and EMAIL_PASS variables")
+    st.error("Please make sure your secrets are properly configured")
     st.stop()
 
 # === CONFIGURATION ===
