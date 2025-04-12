@@ -188,6 +188,27 @@ st.image("SmartFolder_AI.png", width=90)
 st.title("SmartFolder AI")
 st.caption("Your Inbox Automation Assistant — Built by Loic Konan | ISK LLC")
 
+# Navigation Links
+st.sidebar.markdown("### 📚 Learn More")
+st.sidebar.markdown("""
+- [📘 FAQ](FAQ)
+- [🧠 How It Works](How_It_Works)
+- [🚀 Try Now](Try_Now)
+""")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🔗 Quick Links")
+st.sidebar.markdown("""
+- [Terms](#)
+- [Privacy](#)
+- [Security](#)
+""")
+
+st.sidebar.markdown("---")
+st.sidebar.caption("© 2025 ISK LLC")
+st.sidebar.caption("📧 [loickonan.lk@gmail.com](mailto:loickonan.lk@gmail.com)")
+st.sidebar.caption("🔗 [LinkedIn](https://www.linkedin.com/in/loickonan/)")
+
 # --- Dashboard Tabs ---
 tabs = st.tabs(["📂 Dashboard", "📜 Audit Log", "⚙️ Settings"])
 
