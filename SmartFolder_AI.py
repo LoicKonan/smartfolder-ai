@@ -75,9 +75,10 @@ def has_been_downloaded(file_hash_value):
     with open(LOG_FILE, "r") as f:
         return file_hash_value in f.read()
 
-def log_download(file_hash_value):
+def log_download(file_hash_value, filename, source="Email"):
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(LOG_FILE, "a") as f:
-        f.write(file_hash_value + "\n")
+        f.write(f"{file_hash_value}|{filename}|{source}|{timestamp}\n")
 
 # === EMAIL HANDLING ===
 def connect_to_gmail():
@@ -149,7 +150,7 @@ def save_attachments(attachments):
         filepath = os.path.join(folder_path, clean(filename))
         with open(filepath, "wb") as f:
             f.write(content)
-        log_download(f_hash)
+        log_download(f_hash, filename, source="Email")
         saved_files.append(filepath)
     return saved_files
 
@@ -166,6 +167,7 @@ def move_existing_files():
                 dest_path = os.path.join(dest_folder, clean(filename))
                 if not os.path.exists(dest_path):
                     shutil.move(full_path, dest_path)
+                    log_download(file_hash(open(full_path, "rb").read()), filename, source="Downloads")
                     moved_files.append(dest_path)
     return moved_files
 
@@ -173,30 +175,29 @@ def move_existing_files():
 st.set_page_config(page_title="SmartFolder AI", page_icon="📂", layout="wide")
 st.markdown("""
     <style>
-        .main {background-color: #f8f9fa;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
-        .block-container {padding-top: 2rem;}
+        .main {background-color: #f4f7fb;}
+        footer, header {visibility: hidden;}
+        .block-container {padding-top: 1rem;}
+        .metric-label {color: #6c757d; font-size: 0.9rem;}
+        .metric-value {font-size: 1.4rem; font-weight: bold;}
+        .section-title {font-size: 1.2rem; font-weight: 600; margin-top: 2rem;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- Logo and Landing Header ---
-col_logo, col_title = st.columns([1, 5])
-with col_logo:
-    st.image("SmartFolder_AI.png", width=100)
-with col_title:
-    st.title("SmartFolder AI")
-    st.markdown("**Your Inbox Automation Assistant**")
-    st.caption("Built by Loic Konan | ISK LLC")
+st.image("SmartFolder_AI.png", width=90)
+st.title("SmartFolder AI")
+st.caption("Your Inbox Automation Assistant — Built by Loic Konan | ISK LLC")
 
 # --- Dashboard Tabs ---
 tabs = st.tabs(["📂 Dashboard", "📜 Audit Log", "⚙️ Settings"])
 
 # --- Tab 1: Dashboard ---
 with tabs[0]:
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
+    
     with col1:
-        st.header("📧 Fetch Email Attachments")
+        st.markdown("### 📥 Fetch Email Attachments")
+        st.write("Pull recent attachments from Gmail and sort them automatically.")
         if st.button("🔄 Fetch Now"):
             attachments = fetch_attachments()
             st.info(f"Found {len(attachments)} attachment(s).")
@@ -204,23 +205,23 @@ with tabs[0]:
             st.success(f"Saved {len(saved)} file(s).")
             for f in saved:
                 st.write(f"✅ {f}")
-        st.caption("Pull recent attachments from Gmail")
 
     with col2:
-        st.header("🗂️ Organize Local Files")
+        st.markdown("### 🗂️ Organize Local Files")
+        st.write("Sort your Downloads folder by file type.")
         if st.button("🧹 Sort Downloads"):
             moved = move_existing_files()
             st.success(f"Moved {len(moved)} file(s).")
             for f in moved:
                 st.write(f"📁 {f}")
-        st.caption("Clean up your Downloads folder by file type")
 
-    st.divider()
-    st.subheader("📤 Or Drop Files Below to Sort")
-    uploaded_files = st.file_uploader("Drag & Drop", accept_multiple_files=True)
-    if uploaded_files:
-        for file in uploaded_files:
-            st.success(f"✅ {file.name} processed.")  # simulate sorting
+    with col3:
+        st.markdown("### 📤 Drop Files to Sort")
+        st.write("Upload files directly to be sorted.")
+        uploaded_files = st.file_uploader("Drag & Drop", accept_multiple_files=True)
+        if uploaded_files:
+            for file in uploaded_files:
+                st.success(f"✅ {file.name} processed.")
 
 # --- Tab 2: Audit Log ---
 with tabs[1]:
@@ -228,17 +229,67 @@ with tabs[1]:
     ensure_log()
     if os.path.exists(LOG_FILE):
         with open(LOG_FILE, "r") as f:
-            hashes = f.read().splitlines()
-        df = pd.DataFrame(hashes, columns=["Downloaded File Hashes"])
-        st.dataframe(df, use_container_width=True)
-        st.download_button("📥 Export Log", df.to_csv(index=False), file_name="smartfolder_log.csv")
+            lines = [line.strip().split("|") for line in f if line.strip()]
+        df = pd.DataFrame(lines, columns=["Hash", "Filename", "Source", "Timestamp"])
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"])
+        df["Type"] = df["Filename"].apply(lambda x: os.path.splitext(x)[1][1:].upper() if '.' in x else "UNKNOWN")
+
+        st.subheader("📊 Summary")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Files", len(df))
+        with col2:
+            st.metric("Unique Files", df["Hash"].nunique())
+        with col3:
+            common_type = df["Type"].mode().iloc[0] if not df["Type"].empty else "N/A"
+            st.metric("Most Common Type", common_type)
+
+        st.subheader("📈 Download Activity")
+        # Get valid date range
+        valid_dates = df[df["Timestamp"].notna()]
+        if not valid_dates.empty:
+            min_date = valid_dates["Timestamp"].min()
+            max_date = valid_dates["Timestamp"].max()
+            start_date, end_date = st.date_input(
+                "📅 Date Range",
+                [min_date.date(), max_date.date()]
+            )
+            df_range = df[
+                (df["Timestamp"].dt.date >= start_date) & 
+                (df["Timestamp"].dt.date <= end_date)
+            ]
+            st.line_chart(df_range.groupby(df_range["Timestamp"].dt.date).size())
+            
+            st.subheader("📂 File Type Trends")
+            type_trend = df_range.groupby([df_range["Timestamp"].dt.date, "Type"]).size().unstack(fill_value=0)
+            st.area_chart(type_trend)
+            
+            st.subheader("🧮 Latest Files")
+            for file in df_range.sort_values("Timestamp", ascending=False).head(5)["Filename"]:
+                st.write(f"📄 {file}")
+
+            with st.expander("📄 View Full Log"):
+                st.dataframe(df_range, use_container_width=True)
+            st.download_button("📥 Export Log", df_range.to_csv(index=False), file_name="smartfolder_log.csv")
+        else:
+            st.info("No valid timestamps found in the log file.")
+            with st.expander("📄 View Full Log"):
+                st.dataframe(df, use_container_width=True)
+            st.download_button("📥 Export Log", df.to_csv(index=False), file_name="smartfolder_log.csv")
     else:
         st.info("No logs available yet.")
 
 # --- Tab 3: Settings ---
 with tabs[2]:
     st.header("⚙️ Settings")
-    st.text_input("Gmail Filter Email (Optional)")
-    st.selectbox("File Naming Convention", ["ProjectName-Type", "Type-ProjectName"])
-    st.checkbox("Only sort new files", value=True)
+    st.text_input("📧 Gmail Filter Email (Optional)")
+    st.selectbox("🧾 File Naming Convention", [
+        "ProjectName-Type",
+        "Type-ProjectName",
+        "ProjectName-Type-Date",
+        "Type-ProjectName-Date",
+        "Original Filename"
+    ])
+    st.text_input("📂 Default Folder Prefix (Optional)")
+    st.checkbox("🆕 Only sort new files", value=True)
     st.button("💾 Save Settings")
