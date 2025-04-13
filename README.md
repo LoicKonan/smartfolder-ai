@@ -3,7 +3,7 @@
 ![SmartFolder AI Banner](SmartFolder_AI.png)
 
 [![Streamlit](https://img.shields.io/badge/Built%20with-Streamlit-red?logo=streamlit)](https://streamlit.io)
-[![Live App](https://img.shields.io/badge/Live%20App-SmartFolderAI-green?logo=google-chrome)](https://smartfolder-ai.streamlit.app)
+[![Live App](https://img.shields.io/badge/Live%20App-SmartFolderAI-green?logo=google-chrome)](https://smartfolderai.streamlit.app/)
 [![LinkedIn](https://img.shields.io/badge/Connect-LinkedIn-blue?logo=linkedin)](https://www.linkedin.com/in/loickonan/)
 
 ## 📌 Overview
