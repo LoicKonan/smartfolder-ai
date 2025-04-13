@@ -40,7 +40,9 @@ EmailDownloads/
 *.csv
 
 # Sensitive data
-.env
+.streamlit/secrets.toml
+# This file contains sensitive Streamlit secrets (e.g., Gmail credentials).
+# All contributors should copy secrets.template.toml → secrets.toml and NEVER commit their real secrets.
 *.pem
 *.key
 *.cert
@@ -49,4 +51,4 @@ EmailDownloads/
 # Build and deployment
 build/
 dist/
-*.spec 
+*.spec
