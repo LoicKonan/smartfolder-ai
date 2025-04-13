@@ -14,6 +14,8 @@ st.set_page_config(
     layout="wide"
 )
 
+# Sensitive credentials are accessed via st.secrets and not printed or logged.
+
 
 # === USER AUTH ===
 def login_form():

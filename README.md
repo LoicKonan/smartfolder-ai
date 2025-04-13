@@ -6,6 +6,12 @@
 [![Live App](https://img.shields.io/badge/Live%20App-SmartFolderAI-green?logo=google-chrome)](https://smartfolder-ai.streamlit.app)
 [![LinkedIn](https://img.shields.io/badge/Connect-LinkedIn-blue?logo=linkedin)](https://www.linkedin.com/in/loickonan/)
 
+## 📌 Overview
+
+SmartFolder AI is a document automation tool that fetches attachments from your email, auto-organizes them into folders by file type or project, and provides a compliance-ready log. Designed for regulated industries like healthcare and finance.
+
+![SmartFolder AI Demo](./demo_screenshots/demo_dashboard.png)
+
 A modern web application that automatically organizes your email attachments and local files into categorized folders using Streamlit.
 
 ---
@@ -147,25 +153,29 @@ The application is built with a modular architecture:
 ---
 
 ## 🚀 Deployment Options
-
-### Local Development
 ```bash
 streamlit run SmartFolder_AI.py
 ```
 
-### Production Deployment
-For production deployment, consider using:
-- Streamlit Cloud
-- Heroku
-- AWS Elastic Beanstalk
-- Google Cloud Run
+## 🖥️ Technologies Used
 
-### Security Considerations
-- Never commit `.env` file
-- Use environment variables in production
-- Set up proper authentication
-- Configure CORS if needed
-- Use HTTPS in production
+- Python 3.9+
+- Streamlit
+- IMAP (Gmail)
+- Pandas
+- Altair for charts
+- dotenv for secure config management
+
+## 👤 About the Creator
+
+Created by **Loic Konan** — passionate about automation, compliance, and productivity.
+
+- 💼 [LinkedIn](https://www.linkedin.com/in/loickonan/)
+- 📧 loickonan.lk@gmail.com
+
+## 📄 License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
 
 ---
 
@@ -175,6 +185,20 @@ For production deployment, consider using:
 - Email fetching is limited to the last 24 hours to maintain efficiency
 - File hashing is used to prevent duplicate processing
 - The application is designed for personal use and may need optimization for larger-scale deployment
+
+## 📸 Screenshots
+
+### 📊 Dashboard View
+![Dashboard](./pic1.png)
+
+### 📜 Audit Log & Summary
+![Audit Summary](./pic2.png)
+
+### 📈 Trends & Activity
+![Trends](./pic3.png)
+
+### 📊 Monthly + Weekly Analytics
+![Analytics](./pic4.png)
 
 ---
 
