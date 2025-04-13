@@ -12,16 +12,11 @@ SmartFolder AI is a modern document automation app that connects to your email, 
 
 Built for regulated industries like healthcare, finance, and government teams.
 
-<div align="center">
-    <h3>🎥 SmartFolder AI Demo</h3>
-    <p><em>Watch a quick demo to see SmartFolder AI in action:</em></p>
-    <iframe 
-        src="https://www.loom.com/embed/fb644b3271b74bf2b3770eb1732d5ef7?autoplay=1&muted=1" 
-        frameborder="0" 
-        allowfullscreen 
-        style="border: 2px solid #e6e6e6; border-radius: 12px; width: 100%; max-width: 800px; height: 450px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-    </iframe>
-</div>
+### 🎥 Demo Video
+
+See how SmartFolder AI works in under 2 minutes:
+
+[![Watch Demo Video](https://img.shields.io/badge/▶️%20Watch%20Now-SmartFolder%20AI%20Demo-blue?style=for-the-badge&logo=loom)](https://www.loom.com/share/fb644b3271b74bf2b3770eb1732d5ef7?sid=e3911b04-3855-49e6-bf96-97fa75aca660)
 
 ---
 
