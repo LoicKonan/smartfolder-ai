@@ -6,23 +6,18 @@
 [![Live App](https://img.shields.io/badge/Live%20App-SmartFolderAI-green?logo=google-chrome)](https://smartfolderai.streamlit.app/)
 [![LinkedIn](https://img.shields.io/badge/Connect-LinkedIn-blue?logo=linkedin)](https://www.linkedin.com/in/loickonan/)
 
-## 📌 Overview
+## 📌 Overview & Demo
 
-SmartFolder AI is a document automation tool that fetches attachments from your email, auto-organizes them into folders by file type or project, and provides a compliance-ready log. Designed for regulated industries like healthcare and finance.
+SmartFolder AI is a modern document automation app that connects to your email, fetches attachments, and organizes them into clean, categorized folders — PDFs, WordDocs, Excels, and more. It also logs every action for audit-ready compliance.
 
-![SmartFolder AI Demo](./demo_screenshots/demo_dashboard.png)
+Built for regulated industries like healthcare, finance, and government teams.
 
-A modern web application that automatically organizes your email attachments and local files into categorized folders using Streamlit.
-
-## 🎥 Demo Video
-
+🎥 **Watch It in Action**  
 Learn how SmartFolder AI works in under 2 minutes:
 
-- ▶️ Loom Walkthrough  
 [![Watch on Loom](https://cdn.loom.com/sessions/thumbnails/fb644b3271b74bf2b3770eb1732d5ef7-with-play.gif)](https://www.loom.com/share/fb644b3271b74bf2b3770eb1732d5ef7?sid=5042a9bf-5f45-49df-a970-deb5779244de)
 
-- ▶️ Alternate Demo on InVideo  
-[![Watch on InVideo](./demo_screenshots/demo_dashboard.png)](https://ai.invideo.io/workspace/aea9f05b-e9e2-4c72-b933-c303fc78eed4/account/settings)
+![SmartFolder AI Demo](./demo_screenshots/demo_dashboard.png)
 
 ---
 
