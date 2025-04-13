@@ -51,4 +51,4 @@ EmailDownloads/
 # Build and deployment
 build/
 dist/
-*.spec
+*.spec.streamlit/secrets.toml
