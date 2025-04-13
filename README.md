@@ -15,7 +15,7 @@ Built for regulated industries like healthcare, finance, and government teams.
 🎥 **Watch It in Action**  
 Learn how SmartFolder AI works in under 2 minutes:
 
-[![Watch on Loom](https://cdn.loom.com/sessions/thumbnails/fb644b3271b74bf2b3770eb1732d5ef7-with-play.gif)](https://www.loom.com/share/fb644b3271b74bf2b3770eb1732d5ef7?sid=5042a9bf-5f45-49df-a970-deb5779244de)
+[![Watch on Loom](https://cdn.loom.com/sessions/thumbnails/fb644b3271b74bf2b3770eb1732d5ef7-with-play.gif)](https://www.loom.com/share/fb644b3271b74bf2b3770eb1732d5ef7?sid=e3911b04-3855-49e6-bf96-97fa75aca660)
 
 ![SmartFolder AI Demo](./demo_screenshots/demo_dashboard.png)
 
