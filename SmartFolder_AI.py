@@ -8,6 +8,11 @@ import imaplib
 import email
 import pandas as pd
 import altair as alt
+st.set_page_config(
+    page_title="SmartFolder AI",
+    page_icon="📂",
+    layout="wide"
+)
 
 
 # === USER AUTH ===
@@ -29,9 +34,11 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 
+# If not authenticated, show login and stop.
 if not st.session_state.authenticated:
     login_form()
     st.stop()
+demo_mode = st.sidebar.checkbox("🧪 Demo Mode", value=False, help="View sample data and try features without real uploads")
 
 
 # === LOAD CONFIG ===
@@ -240,12 +247,6 @@ def move_existing_files():
     return moved_files
 
 
-# === STREAMLIT UI ===
-st.set_page_config(
-    page_title="SmartFolder AI",
-    page_icon="📂",
-    layout="wide"
-)
 st.markdown("""
     <style>
         .main {background-color: #f4f7fb;}
@@ -259,15 +260,39 @@ st.markdown("""
 
 st.image("SmartFolder_AI.png", width=90)
 st.title("SmartFolder AI")
-st.caption("Your Inbox Automation Assistant — Built by Loic Konan | ISK LLC")
+st.success("👋 Welcome back! SmartFolder AI is ready to organize your world.")
+col_stat1, col_stat2, col_stat3 = st.columns(3)
+# Load real metrics from log
+files_organized = 0
+emails_processed = 0
+last_sync_time = "N/A"
+
+if os.path.exists(LOG_FILE):
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            lines = []
+            for ln in f:
+                parts = ln.strip().split("\t")
+                if len(parts) == 4:
+                    lines.append(parts)
+        files_organized = len(lines)
+        emails_processed = sum(1 for line in lines if "Email" in line[3])
+        if lines:
+            last_sync_time = lines[-1][0]
+            try:
+                last_sync_time = datetime.datetime.strptime(last_sync_time, "%Y-%m-%d %H:%M:%S").strftime("%b %d, %Y")
+            except ValueError:
+                pass
+
+col_stat1.metric("🗂️ Files Organized", str(files_organized))
+col_stat2.metric("📧 Emails Processed", str(emails_processed))
+col_stat3.metric("📅 Last Sync", last_sync_time)
 
 # Navigation Links
-st.sidebar.markdown("### 📚 Learn More")
-st.sidebar.markdown("""
-- [📘 FAQ](FAQ)
-- [🧠 How It Works](How_It_Works)
-- [🚀 Try Now](Try_Now)
-""")
+if not st.session_state.get("authenticated", False):
+    st.sidebar.markdown("### 📚 Learn More")
+    st.sidebar.markdown("- 📘 FAQ", unsafe_allow_html=True)
+    st.sidebar.markdown("- 🧠 How It Works", unsafe_allow_html=True)
+    st.sidebar.markdown("- 🚀 Try Now", unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔗 Quick Links")
@@ -386,33 +411,52 @@ with tabs[0]:
 # --- Tab 2: Audit Log ---
 with tabs[1]:
     st.header("📜 Download & Sort History")
+    if not os.path.exists(LOG_FILE) or os.stat(LOG_FILE).st_size == 0:
+        st.info("📭 Your activity log is currently empty. Once you start organizing, you'll see trends here.")
+        st.stop()
     
     ensure_log()
     if os.path.exists(LOG_FILE):
         try:
             # Read the log file with tab separator
-            with open(LOG_FILE, "r") as f:
-                lines = [
-                    ln.strip().split("\t") 
-                    for ln in f if ln.strip()
-                ]
+            with st.spinner("🔄 Loading log data..."):
+                with open(LOG_FILE, "r") as f:
+                    lines = [ln.strip().split("\t") for ln in f if ln.strip() and len(ln.strip().split("\t")) == 4]
+                if not lines:
+                    st.info("📭 No valid log data found. Try processing some files first.")
+                    st.stop()
             
             if lines:
-                # Create DataFrame with proper column names
-                df = pd.DataFrame(
-                    lines,
-                    columns=["Timestamp", "Hash", "Filename", "Source"]
-                )
-                df["Timestamp"] = pd.to_datetime(df["Timestamp"])
-                
-                # Extract file extension for Type
-                def get_file_type(filename):
-                    if pd.isna(filename) or not isinstance(filename, str):
-                        return "UNKNOWN"
-                    ext = os.path.splitext(filename)[1]
-                    return ext[1:].upper() if ext else "UNKNOWN"
-                
-                df["Type"] = df["Filename"].apply(get_file_type)
+                if demo_mode:
+                    import random
+                    import numpy as np
+                    fake_dates = pd.date_range(end=datetime.datetime.today(), periods=90).tolist()
+                    fake_types = ["PDF", "DOCX", "XLSX", "PPTX"]
+                    fake_sources = ["Email", "Downloads", "Upload"]
+                    df = pd.DataFrame({
+                        "Timestamp": random.choices(fake_dates, k=200),
+                        "Hash": [f"hash_{i}" for i in range(200)],
+                        "Filename": [f"file_{i}.{random.choice(fake_types).lower()}" for i in range(200)],
+                        "Source": [random.choice(fake_sources) for _ in range(200)]
+                    })
+                    df["Type"] = df["Filename"].apply(lambda x: os.path.splitext(x)[1][1:].upper())
+                    st.info("🧪 Demo Mode is active. Displaying simulated log data.")
+                else:
+                    # Create DataFrame with proper column names
+                    df = pd.DataFrame(
+                        lines,
+                        columns=["Timestamp", "Hash", "Filename", "Source"]
+                    )
+                    df["Timestamp"] = pd.to_datetime(df["Timestamp"])
+                    
+                    # Extract file extension for Type
+                    def get_file_type(filename):
+                        if pd.isna(filename) or not isinstance(filename, str):
+                            return "UNKNOWN"
+                        ext = os.path.splitext(filename)[1]
+                        return ext[1:].upper() if ext else "UNKNOWN"
+                    
+                    df["Type"] = df["Filename"].apply(get_file_type)
 
                 # Display summary metrics and pie chart
                 st.subheader("📊 Summary")
@@ -470,16 +514,33 @@ with tabs[1]:
                     min_date = valid_dates["Timestamp"].min()
                     max_date = valid_dates["Timestamp"].max()
                     date_range = [min_date.date(), max_date.date()]
-                    start_date, end_date = st.date_input(
-                        "📅 Date Range",
-                        date_range
-                    )
-                    
-                    mask = (
-                        (df["Timestamp"].dt.date >= start_date) & 
-                        (df["Timestamp"].dt.date <= end_date)
-                    )
-                    df_range = df[mask].copy()
+                    preset_range = st.selectbox("📆 Quick Date Filter", ["Last 3 Months", "Last 6 Months", "Last Month", "Last Week", "Select a Day"])
+                    if preset_range == "Last 3 Months":
+                        start_date = max_date - pd.DateOffset(months=3)
+                        end_date = max_date
+                    elif preset_range == "Last 6 Months":
+                        start_date = max_date - pd.DateOffset(months=6)
+                        end_date = max_date
+                    elif preset_range == "Last Month":
+                        start_date = max_date - pd.DateOffset(months=1)
+                        end_date = max_date
+                    elif preset_range == "Last Week":
+                        start_date = max_date - pd.DateOffset(weeks=1)
+                        end_date = max_date
+                    elif preset_range == "Select a Day":
+                        selected_day = st.date_input("📅 Select a Day", value=max_date.date())
+                        if isinstance(selected_day, datetime.date):
+                            start_date = end_date = pd.to_datetime(selected_day)
+                        else:
+                            st.warning("⚠️ Please select a valid day.")
+                            st.stop()
+                    if isinstance(start_date, datetime.date) and isinstance(end_date, datetime.date):
+                        start_date = pd.to_datetime(start_date)
+                        end_date = pd.to_datetime(end_date)
+                        mask = (df["Timestamp"] >= start_date) & (df["Timestamp"] <= end_date)
+                        df_range = df[mask].copy()
+                        if df_range.empty:
+                            st.info("📭 No log data found for the selected period. Try a different date or process new files.")
                     
                     # Daily activity chart
                     daily_counts = df_range.groupby(
@@ -487,6 +548,67 @@ with tabs[1]:
                     ).size()
                     if not daily_counts.empty:
                         st.line_chart(daily_counts)
+                        st.subheader("📆 Weekly Trends by File Type")
+                        
+                        # Add a 'Week' column from the timestamp
+                        df_range["Week"] = df_range["Timestamp"].dt.to_period("W").apply(lambda r: r.start_time)
+                        
+                        # Group by week and file type
+                        weekly_trends = df_range.groupby(["Week", "Type"]).size().reset_index(name="Count")
+                        
+                        # Plot with Altair
+                        weekly_chart = alt.Chart(weekly_trends).mark_bar().encode(
+                            x=alt.X("Week:T", title="Week"),
+                            y=alt.Y("Count:Q", title="Files"),
+                            color=alt.Color("Type:N", title="File Type"),
+                            tooltip=["Week:T", "Type:N", "Count:Q"]
+                        ).properties(
+                            width=700,
+                            height=400,
+                            title="📊 Weekly File Upload Trends by Type"
+                        )
+                        
+                        st.altair_chart(weekly_chart, use_container_width=True)
+                    
+                        st.subheader("📅 Monthly Trends by File Type")
+                        chart_type = st.radio("📊 Chart Type", ["📈 Line", "📊 Bar"], horizontal=True)
+                        df_range["Month"] = df_range["Timestamp"].dt.to_period("M").apply(lambda r: r.start_time)
+                        # Filter by recent months (e.g., last 6 months)
+                        recent_months = sorted(df_range["Month"].unique())[-6:]
+                        selected_months = st.multiselect("📅 Select Recent Months", recent_months, default=recent_months)
+                        df_range = df_range[df_range["Month"].isin(selected_months)]
+
+
+                        unique_types = df_range["Type"].dropna().unique().tolist()
+                        selected_types = st.multiselect("🗂️ Filter by File Type", unique_types, default=unique_types, help="Select file types to include in the charts and logs")
+                        df_range = df_range[df_range["Type"].isin(selected_types)]
+
+                        monthly_trends = df_range.groupby(["Month", "Type", "Source"]).size().reset_index(name="Count")
+                        
+                        monthly_chart = alt.Chart(monthly_trends)
+                        
+                        if chart_type == "📈 Line":
+                            chart = monthly_chart.mark_line(point=True).encode(
+                                x=alt.X("Month:T", title="Month"),
+                                y=alt.Y("Count:Q", title="Files"),
+                                color=alt.Color("Type:N", title="File Type"),
+                                strokeDash=alt.StrokeDash("Source:N"),
+                                tooltip=["Month:T", "Type:N", "Source:N", "Count:Q"]
+                            )
+                        else:
+                            chart = monthly_chart.mark_bar().encode(
+                                x=alt.X("Month:T", title="Month"),
+                                y=alt.Y("Count:Q", title="Files"),
+                                color=alt.Color("Type:N", title="File Type"),
+                                column=alt.Column("Source:N", title="By Source"),
+                                tooltip=["Month:T", "Type:N", "Source:N", "Count:Q"]
+                            )
+                        
+                        st.altair_chart(chart.properties(
+                            width=700,
+                            height=400,
+                            title="Monthly File Upload Trends by Type and Source"
+                        ), use_container_width=True)
                     
                     # File type trends with pie chart
                     st.subheader("📂 File Type Trends")
@@ -590,24 +712,36 @@ with tabs[1]:
                     with st.expander("📄 View Full Log"):
                         # Extract email information first
                         def extract_source_info(source):
-                            if "(" in source and ")" in source:
-                                base = source.split("(")[0].strip()
-                                email = source[
-                                    source.find("(")+1:source.find(")")
-                                ]
-                                return pd.Series([base, email])
-                            return pd.Series([source, ""])
+                            try:
+                                if "(" in source and ")" in source:
+                                    base = source.split("(")[0].strip()
+                                    email = source[source.find("(")+1:source.find(")")]
+                                    return pd.Series([base, email])
+                                else:
+                                    return pd.Series([source.strip(), ""])
+                            except Exception:
+                                return pd.Series(["Unknown", ""])
                         
-                        # Process source information
-                        df_range[["Source", "Email"]] = (
-                            df_range["Source"].apply(extract_source_info)
-                        )
+                        # Extract source and email columns safely
+                        source_info_df = df_range["Source"].apply(extract_source_info)
+                        source_info_df.columns = ["Source", "Email"]  # Rename after extraction
+
+                        # Drop original Source and concatenate clean columns
+                        df_range = df_range.drop(columns=["Source"], errors='ignore')
+                        df_range = pd.concat([df_range, source_info_df], axis=1)
                         
+                        # Filter by email sender if available
+                        if "Email" in df_range.columns:
+                            unique_senders = df_range["Email"].dropna().unique().tolist()
+                            if unique_senders:
+                                selected_senders = st.multiselect("✉️ Filter by Sender", unique_senders, default=unique_senders, help="Search or select sender(s) to filter logs")
+                                df_range = df_range[df_range["Email"].isin(selected_senders)]
+
                         # Determine columns based on email visibility
                         display_cols = [
                             "Timestamp", "Filename", "Type", "Source"
                         ]
-                        if show_emails:
+                        if show_emails and "Email" in df_range.columns:
                             display_cols.append("Email")
                         
                         # Display the dataframe with selected columns
@@ -680,4 +814,5 @@ with tabs[2]:
     )
     
     if st.button("💾 Save Settings"):
+        st.caption("Your Inbox Automation Assistant — Built by Loic Konan | ISK LLC")
         st.success("Settings saved successfully!")

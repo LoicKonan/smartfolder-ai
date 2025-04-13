@@ -51,4 +51,4 @@ with col1:
 with col2:
     st.markdown("📧 [loickonan.lk@gmail.com](mailto:loickonan.lk@gmail.com)")
 with col3:
-    st.markdown("🔗 [LinkedIn](https://www.linkedin.com/in/loickonan/)") 
+    st.markdown("🔗 [LinkedIn](https://www.linkedin.com/in/loickonan/)")
