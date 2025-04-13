@@ -1,10 +1,8 @@
 import streamlit as st
-from hashlib import sha256
 import os
 import hashlib
 import shutil
 import datetime
-from dotenv import load_dotenv
 from pathlib import Path
 import imaplib
 import email
@@ -76,9 +74,11 @@ def has_been_downloaded(file_hash_value):
         return file_hash_value in f.read()
 
 def log_download(file_hash_value, filename, source="Email"):
+    """Log a processed file with timestamp and source."""
+    ensure_log()
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(LOG_FILE, "a") as f:
-        f.write(f"{file_hash_value}|{filename}|{source}|{timestamp}\n")
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{timestamp}\t{file_hash_value}\t{filename}\t{source}\n")
 
 # === EMAIL HANDLING ===
 def connect_to_gmail():
@@ -156,19 +156,54 @@ def save_attachments(attachments):
 
 def move_existing_files():
     moved_files = []
-    for filename in os.listdir(DOWNLOADS_DIR):
-        full_path = os.path.join(DOWNLOADS_DIR, filename)
-        if os.path.isfile(full_path):
-            ext = os.path.splitext(filename)[1].lower()
-            if ext in FILE_CATEGORIES:
-                category = get_category_folder(ext)
-                dest_folder = os.path.join(BASE_DIR, category)
-                os.makedirs(dest_folder, exist_ok=True)
-                dest_path = os.path.join(dest_folder, clean(filename))
-                if not os.path.exists(dest_path):
-                    shutil.move(full_path, dest_path)
-                    log_download(file_hash(open(full_path, "rb").read()), filename, source="Downloads")
-                    moved_files.append(dest_path)
+    errors = []
+    
+    try:
+        # Ensure base directory exists
+        os.makedirs(BASE_DIR, exist_ok=True)
+        
+        for filename in os.listdir(DOWNLOADS_DIR):
+            try:
+                full_path = os.path.join(DOWNLOADS_DIR, filename)
+                if os.path.isfile(full_path):
+                    ext = os.path.splitext(filename)[1].lower()
+                    if ext in FILE_CATEGORIES:
+                        try:
+                            # Read file and compute hash
+                            with open(full_path, "rb") as f:
+                                content = f.read()
+                                f_hash = file_hash(content)
+                            
+                            # Create category folder
+                            category = get_category_folder(ext)
+                            dest_folder = os.path.join(BASE_DIR, category)
+                            os.makedirs(dest_folder, exist_ok=True)
+                            
+                            # Move file
+                            dest_path = os.path.join(dest_folder, clean(filename))
+                            if not os.path.exists(dest_path):
+                                shutil.move(full_path, dest_path)
+                                log_download(f_hash, filename, source="Downloads")
+                                moved_files.append(dest_path)
+                            
+                        except (IOError, OSError) as e:
+                            errors.append(f"Error processing {filename}: {str(e)}")
+                            continue
+                            
+            except Exception as e:
+                errors.append(f"Error with file {filename}: {str(e)}")
+                continue
+                
+    except Exception as e:
+        st.error(f"Error accessing Downloads folder: {str(e)}")
+        return moved_files
+    
+    # Show errors if any
+    if errors:
+        with st.expander("⚠️ Processing Errors"):
+            for error in errors:
+                st.warning(error)
+    
     return moved_files
 
 # === STREAMLIT UI ===
@@ -249,56 +284,92 @@ with tabs[1]:
     st.header("📜 Download & Sort History")
     ensure_log()
     if os.path.exists(LOG_FILE):
-        with open(LOG_FILE, "r") as f:
-            lines = [line.strip().split("|") for line in f if line.strip()]
-        df = pd.DataFrame(lines, columns=["Hash", "Filename", "Source", "Timestamp"])
-        df["Timestamp"] = pd.to_datetime(df["Timestamp"])
-        df["Type"] = df["Filename"].apply(lambda x: os.path.splitext(x)[1][1:].upper() if '.' in x else "UNKNOWN")
-
-        st.subheader("📊 Summary")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Total Files", len(df))
-        with col2:
-            st.metric("Unique Files", df["Hash"].nunique())
-        with col3:
-            common_type = df["Type"].mode().iloc[0] if not df["Type"].empty else "N/A"
-            st.metric("Most Common Type", common_type)
-
-        st.subheader("📈 Download Activity")
-        # Get valid date range
-        valid_dates = df[df["Timestamp"].notna()]
-        if not valid_dates.empty:
-            min_date = valid_dates["Timestamp"].min()
-            max_date = valid_dates["Timestamp"].max()
-            start_date, end_date = st.date_input(
-                "📅 Date Range",
-                [min_date.date(), max_date.date()]
-            )
-            df_range = df[
-                (df["Timestamp"].dt.date >= start_date) & 
-                (df["Timestamp"].dt.date <= end_date)
-            ]
-            st.line_chart(df_range.groupby(df_range["Timestamp"].dt.date).size())
+        try:
+            # Read the log file with tab separator
+            with open(LOG_FILE, "r") as f:
+                lines = [line.strip().split("\t") for line in f if line.strip()]
             
-            st.subheader("📂 File Type Trends")
-            type_trend = df_range.groupby([df_range["Timestamp"].dt.date, "Type"]).size().unstack(fill_value=0)
-            st.area_chart(type_trend)
-            
-            st.subheader("🧮 Latest Files")
-            for file in df_range.sort_values("Timestamp", ascending=False).head(5)["Filename"]:
-                st.write(f"📄 {file}")
+            if lines:
+                # Create DataFrame with proper column names
+                df = pd.DataFrame(lines, columns=["Timestamp", "Hash", "Filename", "Source"])
+                df["Timestamp"] = pd.to_datetime(df["Timestamp"])
+                
+                # Extract file extension for Type
+                def get_file_type(filename):
+                    if pd.isna(filename) or not isinstance(filename, str):
+                        return "UNKNOWN"
+                    ext = os.path.splitext(filename)[1]
+                    return ext[1:].upper() if ext else "UNKNOWN"
+                
+                df["Type"] = df["Filename"].apply(get_file_type)
 
-            with st.expander("📄 View Full Log"):
-                st.dataframe(df_range, use_container_width=True)
-            st.download_button("📥 Export Log", df_range.to_csv(index=False), file_name="smartfolder_log.csv")
-        else:
-            st.info("No valid timestamps found in the log file.")
-            with st.expander("📄 View Full Log"):
-                st.dataframe(df, use_container_width=True)
-            st.download_button("📥 Export Log", df.to_csv(index=False), file_name="smartfolder_log.csv")
+                # Display summary metrics
+                st.subheader("📊 Summary")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Total Files", len(df))
+                with col2:
+                    st.metric("Unique Files", df["Hash"].nunique())
+                with col3:
+                    common_type = df["Type"].mode().iloc[0] if not df["Type"].empty else "N/A"
+                    st.metric("Most Common Type", common_type)
+
+                # Activity charts
+                st.subheader("📈 Download Activity")
+                valid_dates = df[df["Timestamp"].notna()]
+                if not valid_dates.empty:
+                    min_date = valid_dates["Timestamp"].min()
+                    max_date = valid_dates["Timestamp"].max()
+                    start_date, end_date = st.date_input(
+                        "📅 Date Range",
+                        [min_date.date(), max_date.date()]
+                    )
+                    
+                    mask = (
+                        (df["Timestamp"].dt.date >= start_date) & 
+                        (df["Timestamp"].dt.date <= end_date)
+                    )
+                    df_range = df[mask].copy()
+                    
+                    # Daily activity chart
+                    daily_counts = df_range.groupby(df_range["Timestamp"].dt.date).size()
+                    if not daily_counts.empty:
+                        st.line_chart(daily_counts)
+                    
+                    # File type trends
+                    st.subheader("📂 File Type Trends")
+                    type_counts = df_range.groupby("Type").size()
+                    if not type_counts.empty:
+                        st.bar_chart(type_counts)
+                    
+                    # Latest files
+                    st.subheader("🧮 Latest Files")
+                    latest_files = df_range.sort_values("Timestamp", ascending=False).head(5)
+                    for _, row in latest_files.iterrows():
+                        st.write(f"📄 {row['Filename']} ({row['Type']})")
+
+                    # Full log view and export
+                    with st.expander("📄 View Full Log"):
+                        st.dataframe(
+                            df_range[["Timestamp", "Filename", "Type", "Source"]],
+                            use_container_width=True
+                        )
+                    
+                    csv = df_range.to_csv(index=False)
+                    st.download_button(
+                        "📥 Export Log",
+                        csv,
+                        file_name="smartfolder_log.csv"
+                    )
+                else:
+                    st.info("No data available for the selected date range.")
+            else:
+                st.info("Log file is empty. Start processing files to see activity.")
+        except Exception as e:
+            st.error(f"Error processing log file: {str(e)}")
+            st.info("Try processing some files first to generate log data.")
     else:
-        st.info("No logs available yet.")
+        st.info("No logs available yet. Start processing files to see activity.")
 
 # --- Tab 3: Settings ---
 with tabs[2]:
