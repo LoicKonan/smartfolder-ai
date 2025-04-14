@@ -12,13 +12,19 @@ SmartFolder AI is a modern document automation app that connects to your email, 
 
 Built for regulated industries like healthcare, finance, and government teams.
 
-### 🎥 Watch Demo Video
+### 🎥 Demo Video
 
-[![Watch on Loom](https://cdn.loom.com/sessions/thumbnails/fb644b3271b74bf2b3770eb1732d5ef7-with-play.gif)](https://www.loom.com/share/fb644b3271b74bf2b3770eb1732d5ef7?sid=e3911b04-3855-49e6-bf96-97fa75aca660)
+SmartFolder AI in action — see how it fetches, organizes, and logs files seamlessly.
 
-### 📺 InVideo Preview
-
-[![Watch on InVideo](https://img.shields.io/badge/▶️%20Watch%20on-InVideo-blue?style=for-the-badge&logo=google)](https://ai.invideo.io/workspace/aea9f05b-e9e2-4c72-b933-c303fc78eed4/v30-copilot/1f40930b-cd9d-4b3d-aa5c-4b264c61f0c4)
+<p align="center">
+  <a href="https://www.loom.com/share/fb644b3271b74bf2b3770eb1732d5ef7?sid=e3911b04-3855-49e6-bf96-97fa75aca660" target="_blank">
+    <img src="https://img.shields.io/badge/▶️%20Loom%20Walkthrough-SmartFolder%20AI-FF4B4B?style=for-the-badge&logo=loom&logoColor=white" alt="Loom Demo">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://ai.invideo.io/workspace/aea9f05b-e9e2-4c72-b933-c303fc78eed4/v30-copilot/1f40930b-cd9d-4b3d-aa5c-4b264c61f0c4" target="_blank">
+    <img src="https://img.shields.io/badge/📽️%20InVideo%20Preview-SmartFolder%20AI-1DA1F2?style=for-the-badge&logo=video&logoColor=white" alt="InVideo Preview">
+  </a>
+</p>
 
 ---
 
